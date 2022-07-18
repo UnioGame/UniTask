@@ -253,3 +253,11 @@ src/UniTask/UnityEngine.UI.Player.csproj
 src/UniTask/DOTween.Modules.Player.csproj
 
 src/UniTask/Assembly-CSharp.Player.csproj
+
+src/UniTask/Unity.EditorCoroutines.Editor.csproj
+
+src/UniTask/.vsconfig
+
+src/UniTask/Logs/ApiUpdaterCheck.txt
+
+src/UniTask/Assembly-CSharp-firstpass.csproj

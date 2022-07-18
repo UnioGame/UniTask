@@ -175,6 +175,7 @@ namespace Cysharp.Threading.TasksTests
             }
         });
 
+#if !UNITY_WEBGL
 
         [UnityTest]
         public IEnumerator DelayInThreadPool() => UniTask.ToCoroutine(async () =>
@@ -184,6 +185,8 @@ namespace Cysharp.Threading.TasksTests
                 await UniTask.Delay(TimeSpan.FromSeconds(2));
             });
         });
+
+#endif
 
         [UnityTest]
         public IEnumerator DelayRealtime() => UniTask.ToCoroutine(async () =>
@@ -199,6 +202,17 @@ namespace Cysharp.Threading.TasksTests
 
             okay1.Should().Be(true);
             okay2.Should().Be(true);
+        });
+
+
+        [UnityTest]
+        public IEnumerator LoopTest() => UniTask.ToCoroutine(async () =>
+        {
+            for (int i = 0; i < 20; ++i)
+            {
+                UniTask.DelayFrame(100).Forget();
+                await UniTask.DelayFrame(1);
+            }
         });
     }
 }

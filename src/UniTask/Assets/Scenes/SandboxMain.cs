@@ -17,6 +17,7 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.Rendering;
 using System.IO;
+using System.Linq.Expressions;
 
 
 // using DG.Tweening;
@@ -267,32 +268,33 @@ public class SandboxMain : MonoBehaviour
 
     async Task Test1()
     {
-        var r = await TcsAsync("https://bing.com/");
+        // var r = await TcsAsync("https://bing.com/");
+        await Task.Yield();
         Debug.Log("TASKASYNC");
     }
 
-    async UniTaskVoid Test2()
-    {
-        try
-        {
-            //var cts = new CancellationTokenSource();
-            //var r = UniAsync("https://bing.com/", cts.Token);
-            //cts.Cancel();
-            //await r;
-            Debug.Log("SendWebRequestDone:" + PlayerLoopInfo.CurrentLoopType);
+    //async UniTaskVoid Test2()
+    //{
+    //    try
+    //    {
+    //        //var cts = new CancellationTokenSource();
+    //        //var r = UniAsync("https://bing.com/", cts.Token);
+    //        //cts.Cancel();
+    //        //await r;
+    //        Debug.Log("SendWebRequestDone:" + PlayerLoopInfo.CurrentLoopType);
 
 
-            //        var foo = await UnityWebRequest.Get("https://bing.com/").SendWebRequest();
-            //          foo.downloadHandler.text;
-            //
-            _ = await UnityWebRequest.Get("https://bing.com/").SendWebRequest().WithCancellation(CancellationToken.None);
-            Debug.Log("SendWebRequestWithCancellationDone:" + PlayerLoopInfo.CurrentLoopType);
-        }
-        catch
-        {
-            Debug.Log("Canceled");
-        }
-    }
+    //        //        var foo = await UnityWebRequest.Get("https://bing.com/").SendWebRequest();
+    //        //          foo.downloadHandler.text;
+    //        //
+    //        _ = await UnityWebRequest.Get("https://bing.com/").SendWebRequest().WithCancellation(CancellationToken.None);
+    //        Debug.Log("SendWebRequestWithCancellationDone:" + PlayerLoopInfo.CurrentLoopType);
+    //    }
+    //    catch
+    //    {
+    //        Debug.Log("Canceled");
+    //    }
+    //}
 
     IEnumerator Test3(string url)
     {
@@ -301,17 +303,17 @@ public class SandboxMain : MonoBehaviour
         Debug.Log("COROUTINE");
     }
 
-    static async Task<UnityWebRequest> TcsAsync(string url)
-    {
-        var req = await UnityWebRequest.Get(url).SendWebRequest();
-        return req;
-    }
+    //static async Task<UnityWebRequest> TcsAsync(string url)
+    //{
+    //    var req = await UnityWebRequest.Get(url).SendWebRequest();
+    //    return req;
+    //}
 
-    static async UniTask<UnityWebRequest> UniAsync(string url, CancellationToken cancellationToken)
-    {
-        var req = await UnityWebRequest.Get(url).SendWebRequest().WithCancellation(cancellationToken);
-        return req;
-    }
+    //static async UniTask<UnityWebRequest> UniAsync(string url, CancellationToken cancellationToken)
+    //{
+    //    var req = await UnityWebRequest.Get(url).SendWebRequest().WithCancellation(cancellationToken);
+    //    return req;
+    //}
 
     async Task<int> Test()
     {
@@ -426,15 +428,15 @@ public class SandboxMain : MonoBehaviour
         Debug.Log("after");
     }
 
-    private async UniTaskVoid ExecuteAsync()
-    {
-        var req = UnityWebRequest.Get("https://google.com/");
+    //private async UniTaskVoid ExecuteAsync()
+    //{
+    //    var req = UnityWebRequest.Get("https://google.com/");
 
-        var v = await req.SendWebRequest().ToUniTask();
-        // req.Dispose();
-        Debug.Log($"{v.isDone} {v.isHttpError} {v.isNetworkError}");
-        Debug.Log(v.downloadHandler.text);
-    }
+    //    var v = await req.SendWebRequest().ToUniTask();
+    //    // req.Dispose();
+    //    Debug.Log($"{v.isDone} {v.isHttpError} {v.isNetworkError}");
+    //    Debug.Log(v.downloadHandler.text);
+    //}
     private async void Go()
     {
         await UniTask.DelayFrame(0);
@@ -491,231 +493,137 @@ public class SandboxMain : MonoBehaviour
     }
 
 
+    async UniTask QuitCheck()
+    {
+        try
+        {
+            await UniTask.Delay(TimeSpan.FromMinutes(1), cancellationToken: quitSource.Token);
+        }
+        finally
+        {
+            Debug.Log("End QuitCheck async");
+        }
+    }
+
+    CancellationTokenSource quitSource = new CancellationTokenSource();
+
+
+    IEnumerator TestCor()
+    {
+        Debug.Log("start cor");
+        yield return null;
+        yield return new WaitForEndOfFrame();
+        Debug.Log("end cor");
+    }
+
+    IEnumerator LastYieldCore()
+    {
+        Debug.Log("YieldBegin:" + Time.frameCount);
+        yield return new WaitForEndOfFrame();
+        Debug.Log("YieldEnd:" + Time.frameCount);
+    }
+
+    private static async UniTask TestAsync(CancellationToken ct)
+    {
+        Debug.Log("TestAsync Start.");
+        var count = 0;
+        while (!ct.IsCancellationRequested)
+        {
+            try
+            {
+                Debug.Log($"TestAsync try count:{++count}");
+                var task1 = new WaitUntil(() => UnityEngine.Random.Range(0, 10) == 0).ToUniTask();
+                var task2 = new WaitUntil(() => UnityEngine.Random.Range(0, 10) == 0).ToUniTask();
+                var task3 = new WaitUntil(() => UnityEngine.Random.Range(0, 10) == 0).ToUniTask();
+
+                await UniTask.WhenAny(task1, task2, task3);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+                return;
+
+
+            }
+        }
+        Debug.Log("TestAsync Finished.");
+    }
+
+
+
+
     async UniTaskVoid Start()
     {
-        RunStandardTaskAsync();
 
-        UnityEngine.Debug.Log("UniTaskPlayerLoop ready? " + PlayerLoopHelper.IsInjectedUniTaskPlayerLoop());
 
-        //var url =  "http://google.com/404";
-        //var webRequestAsyncOperation = UnityWebRequest.Get(url).SendWebRequest();
-        //await webRequestAsyncOperation.ToUniTask();
-
-        //PlayerLoopInfo.Inject();
-
-        //_ = AsyncFixedUpdate();
-        //StartCoroutine(CoroutineFixedUpdate());
-
-        //StartCoroutine(TestCoroutine().ToCoroutine());
-
-        // Application.logMessageReceived += Application_logMessageReceived;
-
-        // var rp = new AsyncReactiveProperty<int>();
-
-
-        // rp.AddTo(this.GetCancellationTokenOnDestroy());
-        //var cts = new CancellationTokenSource();
-
-
-        // UniTask.Post(
-
-        // CancellationToken.
-
-        //UniTask.Delay(TimeSpan.FromSeconds(3)).
-
-
-        //okButton.onClick.AddListener(UniTask.UnityAction(async () =>
-        //{
-        //    _ = ExecuteAsync();
-
-        //    await UniTask.Yield();
-
-        //    //await DelayCheck();
-        //    /*
-        //    UnityEngine.Debug.Log("click:" + PlayerLoopInfo.CurrentLoopType);
-        //    StartCoroutine(CoroutineRun());
-        //    StartCoroutine(CoroutineRun2());
-        //    _ = AsyncRun();
-        //    _ = AsyncLastUpdate();
-        //    _ = AsyncLastLast();
-        //    */
-        //    //await UniTask.Yield();
-        //    //_ = Test2();
-        //    // EarlyUpdate.ExecuteMainThreadJobs
-        //    // _ = Test2();
-
-        //    //var t = await Resources.LoadAsync<TextAsset>(Application.streamingAssetsPath + "test.txt");
-        //    //Debug.Log("LoadEnd" + PlayerLoopInfo.CurrentLoopType + ", " + (t != null));
-        //    //Debug.Log("LoadEnd" + PlayerLoopInfo.CurrentLoopType + ", " + ((TextAsset)t).text);
-
-
-        //    //await UniTask.Yield(PlayerLoopTiming.LastUpdate);
-        //    //UnityEngine.Debug.Log("after update:" + Time.frameCount);
-        //    ////await UniTask.NextFrame();
-        //    ////await UniTask.Yield();
-        //    ////UnityEngine.Debug.Log("after update nextframe:" + Time.frameCount);
-
-        //    //StartCoroutine(CoroutineRun2());
-        //    ////StartCoroutine(CoroutineRun());
-        //    //UnityEngine.Debug.Log("FOO?");
-
-        //    //_ = DelayFrame3_Pre();
-        //    //await UniTask.Yield();
-
-        //}));
-
-        //cancelButton.onClick.AddListener(UniTask.UnityAction(async () =>
-        //{
-        //    _ = DelayFrame3_Post();
-        //    await UniTask.Yield();
-
-        //    //await UniTask.Yield(PlayerLoopTiming.LastPreUpdate);
-        //    //UnityEngine.Debug.Log("before update:" + Time.frameCount);
-        //    //await UniTask.NextFrame();
-        //    //await UniTask.Yield();
-        //    //UnityEngine.Debug.Log("before update nextframe:" + Time.frameCount);
-
-        //    //StartCoroutine(CoroutineRun());
-
-        //    //UnityEngine.Debug.Log("click:" + PlayerLoopInfo.CurrentLoopType);
-        //    //_ = Yieldding();
-
-        //    //var cts = new CancellationTokenSource();
-
-        //    //UnityEngine.Debug.Log("click:" + PlayerLoopInfo.CurrentLoopType + ":" + Time.frameCount);
-        //    //var la = SceneManager.LoadSceneAsync("Scenes/ExceptionExamples").WithCancellation(cts.Token);
-        //    ////cts.Cancel();
-        //    //await la;
-        //    //UnityEngine.Debug.Log("End LoadSceneAsync" + PlayerLoopInfo.CurrentLoopType + ":" + Time.frameCount);
-        //}));
-
-        //return;
-        //await UniTask.SwitchToMainThread();
-
-        //UniTaskAsyncEnumerable.EveryValueChanged(mcc, x => x.MyProperty)
-        //    .Do(_ => { }, () => Debug.Log("COMPLETED"))
-        //    .ForEachAsync(x =>
-        //    {
-        //        Debug.Log("VALUE_CHANGED:" + x);
-        //    })
-        //    .Forget();
-
-        //_ = Test1();
-        //Test2().Forget();
-        //StartCoroutine(Test3("https://bing.com/"));
-
-
-
-
-
-        //bool flip = false;
-        //var rect = cancelButton.GetComponent<RectTransform>();
-        //var cts = new CancellationTokenSource();
-        //var ct = cts.Token;
-        //okButton.onClick.AddListener(UniTask.UnityAction(async () =>
-        //{
-        //    await rect.DOMoveX(10f * (flip ? -1 : 1), 3).OnUpdate(() => { Debug.Log("UPDATE YEAH"); }).WithCancellation(ct);
-        //    flip = !flip;
-        //    // ok.
-        //}));
-        //cancelButton.onClick.AddListener(() =>
-        //{
-        //    cts.Cancel();
-        //});
-
-
-        // DG.Tweening.Core.TweenerCore<int>
-        //Debug.Log("GO MOVEX");
-        //await okButton.GetComponent<RectTransform>().DOMoveX(-10.2f, 3).WithCancellation(CancellationToken.None);
-        //Debug.Log("END MOVEX");
-
-
-        //Debug.Log("AGAIN MOVE");
-        //await okButton.GetComponent<RectTransform>().DOMoveY(10.2f, 3).WithCancellation(CancellationToken.None);
-        //Debug.Log("AGAIN END MOVE");
-
-        //Debug.Log(Test().GetType().FullName);
-
-
-
-        // check stacktrace
-        // await UniTaskAsyncEnumerable.EveryUpdate().Where((x, i) => i % 2 == 0).Select(x => x).DistinctUntilChanged().ForEachAsync(x =>
-        //{
-        // Debug.Log("test");
-        //});
-
-
-
-
-        //// DOTween.To(
-
-        //var cts = new CancellationTokenSource();
-
-        ////var tween = okButton.GetComponent<RectTransform>().DOLocalMoveX(100, 5.0f);
-
-        //cancelButton.OnClickAsAsyncEnumerable().ForEachAsync(_ =>
-        //{
-        //    cts.Cancel();
-        //}).Forget();
-
-
-        //// await tween.ToUniTask(TweenCancelBehaviour.KillAndCancelAwait, cts.Token);
-
-        ////tween.SetRecyclable(true);
-
-        //Debug.Log("END");
-
-        //// tween.Play();
-
-        //// DOTween.
-
-        //// DOVirtual.Float(0, 1, 1, x => { }).ToUniTask();
-
-
-        //await foreach (var _ in UniTaskAsyncEnumerable.EveryUpdate())
-        //{
-        //    Debug.Log("Update() " + Time.frameCount);
-        //}
-
-
-
-        //await okButton.OnClickAsAsyncEnumerable().Where((x, i) => i % 2 == 0).ForEachAsync(_ =>
-        //{
-        //});
-
-
-        //okButton.OnClickAsAsyncEnumerable().ForEachAsync(_ =>
-        //{
-
-
-        //foreach (var (type, size) in TaskPool.GetCacheSizeInfo())
-        //{
-        //    Debug.Log(type + ":" + size);
-        //}
-
-
-        //}).Forget();
-
-        //CloseAsync(this.GetCancellationTokenOnDestroy()).Forget();
-
-        //okButton.onClick.AddListener(UniTask.UnityAction(async () => await UniTask.Yield()));
-
-
-
-        //UpdateUniTask().Forget();
-
-        //StartCoroutine(Coroutine());
-
-        // PlayerLoopInfo.Inject();
-        await UniTask.Delay(TimeSpan.FromSeconds(1));
-        PlayerLoopInfo.DumpPlayerLoop("current", PlayerLoop.GetCurrentPlayerLoop());
-
-
-        // _ = ReturnToMainThreadTest();
-
-        //GameObject.Destroy(this.gameObject);
-
-
+        // UniTask.Delay(TimeSpan.FromSeconds(1)).TimeoutWithoutException
+
+
+        var currentLoop = PlayerLoop.GetDefaultPlayerLoop();
+        PlayerLoopHelper.Initialize(ref currentLoop, InjectPlayerLoopTimings.Minimum); // minimum is Update | FixedUpdate | LastPostLateUpdate
+
+
+
+        
+
+
+        // TestAsync(cts.Token).Forget();
+
+        okButton.onClick.AddListener(UniTask.UnityAction(async () =>
+        {
+            await UniTask.WaitForEndOfFrame(this);
+            var texture = new Texture2D(Screen.width, Screen.height);
+            texture.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0);
+            texture.Apply();
+
+            var jpg = texture.EncodeToJPG();
+            File.WriteAllBytes("testscreencapture.jpg", jpg);
+            Debug.Log("ok?");
+
+            //var texture = ScreenCapture.CaptureScreenshotAsTexture();
+            //if (texture == null)
+            //{
+            //    Debug.Log("fail");
+            //}
+            //else
+            //{
+            //    var jpg = texture.EncodeToJPG();
+            //    File.WriteAllBytes("testscreencapture.jpg", jpg);
+            //    Debug.Log("ok?");
+            //}
+        }));
+
+        cancelButton.onClick.AddListener(UniTask.UnityAction(async () =>
+        {
+            //clickCancelSource.Cancel();
+
+            //RunCheck(PlayerLoopTiming.Initialization).Forget();
+            //RunCheck(PlayerLoopTiming.LastInitialization).Forget();
+            //RunCheck(PlayerLoopTiming.EarlyUpdate).Forget();
+            //RunCheck(PlayerLoopTiming.LastEarlyUpdate).Forget();
+            //RunCheck(PlayerLoopTiming.FixedUpdate).Forget();
+            //RunCheck(PlayerLoopTiming.LastFixedUpdate).Forget();
+            //RunCheck(PlayerLoopTiming.PreUpdate).Forget();
+            //RunCheck(PlayerLoopTiming.LastPreUpdate).Forget();
+            //RunCheck(PlayerLoopTiming.Update).Forget();
+            //RunCheck(PlayerLoopTiming.LastUpdate).Forget();
+            //RunCheck(PlayerLoopTiming.PreLateUpdate).Forget();
+            //RunCheck(PlayerLoopTiming.LastPreLateUpdate).Forget();
+            //RunCheck(PlayerLoopTiming.PostLateUpdate).Forget();
+            //RunCheck(PlayerLoopTiming.LastPostLateUpdate).Forget();
+
+            await UniTask.Yield();
+        }));
+
+        await UniTask.Yield();
+    }
+
+    async UniTaskVoid RunCheck(PlayerLoopTiming timing)
+    {
+        //await UniTask.Yield(timing);
+        //UnityEngine.Debug.Log("Yield:" + timing);
+        await UniTask.DelayFrame(1, timing);
+        UnityEngine.Debug.Log("Delay:" + timing);
     }
 
     private void Application_logMessageReceived2(string condition, string stackTrace, LogType type)

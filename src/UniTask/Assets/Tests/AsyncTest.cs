@@ -55,6 +55,8 @@ namespace Cysharp.Threading.TasksTests
             }
         }
 
+#if !UNITY_WEBGL
+
         [UnityTest]
         public IEnumerator DelayAnd() => UniTask.ToCoroutine(async () =>
         {
@@ -75,6 +77,8 @@ namespace Cysharp.Threading.TasksTests
                 Time.timeScale = 1.0f;
             }
         });
+
+#endif
 
         [UnityTest]
         public IEnumerator DelayIgnore() => UniTask.ToCoroutine(async () =>
@@ -183,6 +187,8 @@ namespace Cysharp.Threading.TasksTests
             diff.Should().Be(11);
         });
 
+#if !UNITY_WEBGL
+
         [UnityTest]
         public IEnumerator SwitchTo() => UniTask.ToCoroutine(async () =>
         {
@@ -214,6 +220,8 @@ namespace Cysharp.Threading.TasksTests
 
             currentThreadId.Should().Be(switchedThreadId2);
         });
+
+#endif
 
         //[UnityTest]
         //public IEnumerator ObservableConversion() => UniTask.ToCoroutine(async () =>
@@ -302,33 +310,33 @@ namespace Cysharp.Threading.TasksTests
             yield return null;
         }
 
-        [UnityTest]
-        public IEnumerator ExceptionUnobserved1() => UniTask.ToCoroutine(async () =>
-        {
-            bool calledEx = false;
-            Action<Exception> action = exx =>
-            {
-                calledEx = true;
-                exx.Message.Should().Be("MyException");
-            };
+        //[UnityTest]
+        //public IEnumerator ExceptionUnobserved1() => UniTask.ToCoroutine(async () =>
+        //{
+        //    bool calledEx = false;
+        //    Action<Exception> action = exx =>
+        //    {
+        //        calledEx = true;
+        //        exx.Message.Should().Be("MyException");
+        //    };
 
-            UniTaskScheduler.UnobservedTaskException += action;
+        //    UniTaskScheduler.UnobservedTaskException += action;
 
-            var ex = InException1();
-            ex = default(UniTask);
+        //    var ex = InException1();
+        //    ex = default(UniTask);
 
-            await UniTask.DelayFrame(3);
+        //    await UniTask.DelayFrame(3);
 
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
+        //    GC.Collect();
+        //    GC.WaitForPendingFinalizers();
+        //    GC.Collect();
 
-            await UniTask.DelayFrame(1);
+        //    await UniTask.DelayFrame(1);
 
-            calledEx.Should().BeTrue();
+        //    calledEx.Should().BeTrue();
 
-            UniTaskScheduler.UnobservedTaskException -= action;
-        });
+        //    UniTaskScheduler.UnobservedTaskException -= action;
+        //});
 
         [UnityTest]
         public IEnumerator ExceptionUnobserved2() => UniTask.ToCoroutine(async () =>
@@ -357,6 +365,29 @@ namespace Cysharp.Threading.TasksTests
 
             UniTaskScheduler.UnobservedTaskException -= action;
         });
+
+        // can not run on RuntimeUnitTestToolkit so ignore...
+        //        [UnityTest]
+        //        public IEnumerator ThrowExceptionUnawaited() => UniTask.ToCoroutine(async () =>
+        //        {
+        //            LogAssert.Expect(LogType.Exception, "Exception: MyException");
+
+        //#pragma warning disable 1998
+        //            async UniTask Throw() => throw new Exception("MyException");
+        //#pragma warning restore 1998
+
+        //#pragma warning disable 4014
+        //            Throw();
+        //#pragma warning restore 4014
+
+        //            await UniTask.DelayFrame(3);
+
+        //            GC.Collect();
+        //            GC.WaitForPendingFinalizers();
+        //            GC.Collect();
+
+        //            await UniTask.DelayFrame(1);
+        //        });
 
         async UniTask InException1()
         {
