@@ -661,7 +661,8 @@ UniTaskTracker 仅用于调试用途，因为启用跟踪和捕获堆栈跟踪�
 
 在单独的 asmdef 中定义，如`UniTask.TextMeshPro`, `UniTask.DOTween`, `UniTask.Addressables`.
 
-从包管理器导入包时，会自动启用 TextMeshPro 和 Addressables 支持。但是对于 DOTween 支持，需要`com.demigiant.dotween`从[OpenUPM](https://openupm.com/packages/com.demigiant.dotween/)导入或定义`UNITASK_DOTWEEN_SUPPORT`以启用它。
+从 Package manager 中导入软件包时，会自动启用对 TextMeshPro 和 Addressables 的支持。
+但对于 DOTween 支持，则需要从 [DOTWeen assets](https://assetstore.unity.com/packages/tools/animation/dotween-hotween-v2-27676r) 中导入并定义脚本定义符号 `UNITASK_DOTWEEN_SUPPORT` 后才能启用。
 
 ```csharp
 // 动画序列
@@ -684,7 +685,7 @@ Unity 2020.2 支持 C# 8.0，因此您可以使用`await foreach`. 这是异步�
 
 ```csharp
 // Unity 2020.2, C# 8.0
-await foreach (var _ in UniTaskAsyncEnumerable.EveryUpdate(token))
+await foreach (var _ in UniTaskAsyncEnumerable.EveryUpdate().WithCancellation(token))
 {
     Debug.Log("Update() " + Time.frameCount);
 }
@@ -694,10 +695,10 @@ await foreach (var _ in UniTaskAsyncEnumerable.EveryUpdate(token))
 
 ```csharp
 // C# 7.3(Unity 2018.3~)
-await UniTaskAsyncEnumerable.EveryUpdate(token).ForEachAsync(_ =>
+await UniTaskAsyncEnumerable.EveryUpdate().ForEachAsync(_ =>
 {
     Debug.Log("Update() " + Time.frameCount);
-});
+}, token);
 ```
 
 UniTaskAsyncEnumerable 实现异步 LINQ，类似于 LINQ 的`IEnumerable<T>`或 Rx 的 `IObservable<T>`。所有标准 LINQ 查询运算符都可以应用于异步流。例如，以下代码表示如何将 Where 过滤器应用于每两次单击运行一次的按钮单击异步流。
@@ -1091,7 +1092,7 @@ openupm add com.cysharp.unitask
 
 .NET Core 版本的 UniTask 是 Unity UniTask 的子集，移除了 PlayerLoop 依赖的方法。
 
-它以比标准 Task/ValueTask 更高的性能运行，但在使用时应注意忽略 ExecutionContext/SynchronizationContext。`AysncLocal`也不起作用，因为它忽略了 ExecutionContext。
+它以比标准 Task/ValueTask 更高的性能运行，但在使用时应注意忽略 ExecutionContext/SynchronizationContext。`AsyncLocal`也不起作用，因为它忽略了 ExecutionContext。
 
 如果您在内部使用 UniTask，但将 ValueTask 作为外部 API 提供，您可以编写如下（受[PooledAwait](https://github.com/mgravell/PooledAwait)启发）代码。
 
