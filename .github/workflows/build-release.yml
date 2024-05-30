@@ -35,10 +35,11 @@ jobs:
       - run: dotnet test -c Release --no-build
       - run: dotnet pack ./src/UniTask.NetCore/UniTask.NetCore.csproj -c Release --no-build -p:Version=${{ inputs.tag }} -o ./publish
       # Store artifacts.
-      - uses: actions/upload-artifact@v2
+      - uses: Cysharp/Actions/.github/actions/upload-artifact@main
         with:
           name: nuget
           path: ./publish/
+          retention-days: 1
 
   build-unity:
     needs: [update-packagejson]
@@ -48,6 +49,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      - name: Load secrets
+        id: op-load-secret
+        uses: 1password/load-secrets-action@v2
+        with:
+          export-env: false
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN_PUBLIC }}
+          UNITY_EMAIL: "op://GitHubActionsPublic/UNITY_LICENSE/username"
+          UNITY_PASSWORD: "op://GitHubActionsPublic/UNITY_LICENSE/credential"
+          UNITY_SERIAL: "op://GitHubActionsPublic/UNITY_LICENSE/serial"
+
       - run: echo ${{ needs.update-packagejson.outputs.sha }}
       - uses: actions/checkout@v3
         with:
@@ -57,9 +69,9 @@ jobs:
       - name: Build Unity (.unitypacakge)
         uses: Cysharp/Actions/.github/actions/unity-builder@main
         env:
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+          UNITY_EMAIL: ${{ steps.op-load-secret.outputs.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ steps.op-load-secret.outputs.UNITY_PASSWORD }}
+          UNITY_SERIAL: ${{ steps.op-load-secret.outputs.UNITY_SERIAL }}
         with:
           projectPath: src/UniTask
           unityVersion: ${{ matrix.unity }}
@@ -71,10 +83,11 @@ jobs:
           directory: src/UniTask
 
       # Store artifacts.
-      - uses: actions/upload-artifact@v2
+      - uses: Cysharp/Actions/.github/actions/upload-artifact@main
         with:
           name: UniTask.${{ inputs.tag }}.unitypackage
           path: ./src/UniTask/UniTask.${{ inputs.tag }}.unitypackage
+          retention-days: 1
 
   # release
   create-release:
